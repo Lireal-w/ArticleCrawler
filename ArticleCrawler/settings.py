@@ -46,9 +46,12 @@ DOWNLOAD_DELAY = 1
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
+DOWNLOADER_MIDDLEWARES = {
 #    "ArticleCrawler.middlewares.ArticlecrawlerDownloaderMiddleware": 543,
-#}
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy_ua_rotator.middleware.RandomUserAgentMiddleware': 400,
+    'scrapy_ua_rotator.middleware.RetryUserAgentMiddleware': 550,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -56,11 +59,20 @@ DOWNLOAD_DELAY = 1
 #    "scrapy.extensions.telnet.TelnetConsole": None,
 #}
 
+USERAGENT_PROVIDERS = [
+    'scrapy_ua_rotator.providers.FakeUserAgentProvider',
+    'scrapy_ua_rotator.providers.FakerProvider',
+    'scrapy_ua_rotator.providers.FixedUserAgentProvider',
+]
+
+
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
+ITEM_PIPELINES = {
 #    "ArticleCrawler.pipelines.ArticlecrawlerPipeline": 300,
-#}
+    "ArticleCrawler.pipelines.ArticleImagesPipeline": 100,
+    "ArticleCrawler.pipelines.JsonFilePipeline": 300,
+}
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
@@ -85,3 +97,7 @@ DOWNLOAD_DELAY = 1
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
+
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
+JSON_OUTPUT_DIR = './outfile'
+IMAGES_STORE = './images'

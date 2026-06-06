@@ -31,3 +31,7 @@ class ArticleItem(scrapy.Item):
     
     # 预计阅读时间（可在爬虫中根据字数或随机生成，单位：分钟）
     read_time = scrapy.Field()
+    
+    content = scrapy.Field()      # 正文 HTML（图片替换后）
+    image_urls = scrapy.Field()   # 临时存储图片 URL 列表
+    images = scrapy.Field()       # ImagesPipeline 结果
