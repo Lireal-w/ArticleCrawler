@@ -214,6 +214,10 @@ class BnldataSpider(scrapy.Spider):
             parent = ad.getparent()
             if parent is not None:
                 parent.remove(ad)
+        for script in editor_element.xpath('.//script'):
+            parent = script.getparent()
+            if parent is not None:
+                parent.remove(script)
         cleaned_html = etree.tostring(editor_element, encoding='unicode')
         item['content'] = cleaned_html
 
