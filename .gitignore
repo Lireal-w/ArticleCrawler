@@ -1,0 +1,5 @@
+outfile/
+images/
+.venv/
+__pycache__/
+.vscode/
