@@ -1,13 +1,13 @@
-import scrapy
+from scrapy import Request
 from urllib.parse import urljoin
 from lxml import etree
 import re
 import math
 
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
-
-class SbcnewsSpider(scrapy.Spider):
+class SbcnewsSpider(SunSpider):
     name = "sbcnews"
     allowed_domains = ["sbcnews.co.uk"]
     start_urls = ["https://sbcnews.co.uk/category/sportsbook/"]
@@ -20,14 +20,16 @@ class SbcnewsSpider(scrapy.Spider):
         article_links = response.css('div.category-post a.sbc-article-card::attr(href)').getall()
         for link in article_links:
             absolute_url = urljoin(response.url, link)
-            yield scrapy.Request(absolute_url, callback=self.parse_article)
-            break
+            if self.is_seen_url(absolute_url):
+                return # 当遇到已抓取过的链接，直接返回
+            yield Request(absolute_url, callback=self.parse_article)
+
         # 2. 翻页逻辑：寻找“下一页”按钮
         next_page = response.css('div.sbc-pagination a.next.page-numbers::attr(href)').get()
         if next_page:
             absolute_next = urljoin(response.url, next_page)
             self.logger.info(f"Following next page: {absolute_next}")
-            yield scrapy.Request(absolute_next, callback=self.parse)
+            yield Request(absolute_next, callback=self.parse)
 
     def parse_article(self, response):
         """

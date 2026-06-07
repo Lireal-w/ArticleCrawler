@@ -4,7 +4,7 @@ from datetime import datetime
 from lxml import html,etree 
 
 def load_data():
-    with open('./outfile/bnldata1.json', 'r', encoding='utf-8') as f:
+    with open('./outfile/sbcnews.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def convert_time(iso_time):
@@ -110,10 +110,12 @@ def submit_data(data):
 
 if __name__ == '__main__':
     data_list = load_data()
-    guo = False
-    for item in data_list:
-        if item.get("title") == "Nova York inaugura primeiro cassino completo e movimenta US$ 17,6 bi em investimentos":
-            guo = True
-        else: 
-            if guo:submit_data(item)
+    print(f"共 {len(data_list)} 条数据")
+    
+    # guo = False
+    # for item in data_list:
+    #     if item.get("title") == "Nova York inaugura primeiro cassino completo e movimenta US$ 17,6 bi em investimentos":
+    #         guo = True
+    #     else: 
+    #         if guo:submit_data(item)
         # break   # 仅测试第一条时取消注释
