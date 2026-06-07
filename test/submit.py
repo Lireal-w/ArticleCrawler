@@ -1,10 +1,10 @@
 import json
 import requests
 from datetime import datetime
-from lxml import html
+from lxml import html,etree 
 
 def load_data():
-    with open('./outfile/bnldata.json', 'r', encoding='utf-8') as f:
+    with open('./outfile/bnldata1.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 
 def convert_time(iso_time):
@@ -43,6 +43,27 @@ def submit_data(data):
     formatted_time = convert_time(publish_time)
     # 匹配content中的图片链接
     tree = html.fromstring(data.get('content', ''))
+    # 执行过滤
+    for fig in tree.xpath('.//figure[contains(@class, "wp-caption")]'):
+        parent = fig.getparent()
+        if parent is not None:
+            parent.remove(fig)
+            
+    for ad in tree.xpath('.//*[contains(@class, "sync-adwrapper")]'):
+        parent = ad.getparent()
+        if parent is not None:
+            parent.remove(ad)
+            
+    for div in tree.xpath('.//div[contains(@class, "single-header__info")]'):
+        parent = div.getparent()
+        if parent is not None:
+            parent.remove(div)
+            
+    for script in tree.xpath('.//script'):
+        parent = script.getparent()
+        if parent is not None:
+            parent.remove(script)
+    data['content'] = etree.tostring(tree, encoding='unicode')
     # 提取所有 img 标签的 src 属性
     img_srcs = tree.xpath('//img/@src')
 
@@ -52,20 +73,17 @@ def submit_data(data):
             url = upload("./images" + src)
             # 替换 content 中的图片链接
             data['content'] = data['content'].replace(src, url)
-    else:
-        return 0
-    # 获取处理后的content
-    content = data.get('content', '')
-    # 保存为html
-    with open('./outfile/content.html', 'w', encoding='utf-8') as f:
-        f.write(content)
-        return 1
+    # # 获取处理后的content
+    # content = data.get('content', '')
+    # # 保存为html
+    # with open('./outfile/content.html', 'w', encoding='utf-8') as f:
+    #     f.write(content)
     # 构建请求参数
     payload = {
         'title': data.get('title', ''),
         'summary': data.get('summary', ''),
         'url': data.get('url', ''),
-        'content': content,
+        'content': data['content'],
         'author_name': data.get('author_name', ''),
         'author_avatar': data.get('author_avatar', ''),
         'publishtime': formatted_time,      # 使用转换后的时间
@@ -92,7 +110,10 @@ def submit_data(data):
 
 if __name__ == '__main__':
     data_list = load_data()
+    guo = False
     for item in data_list:
-        if submit_data(item):
-            break
+        if item.get("title") == "Nova York inaugura primeiro cassino completo e movimenta US$ 17,6 bi em investimentos":
+            guo = True
+        else: 
+            if guo:submit_data(item)
         # break   # 仅测试第一条时取消注释
