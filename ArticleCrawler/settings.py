@@ -52,6 +52,10 @@ DOWNLOADER_MIDDLEWARES = {
     'scrapy_ua_rotator.middleware.RetryUserAgentMiddleware': None,
 }
 
+LOG_FORMATTER = "ArticleCrawler.log_formatter.QuietLogFormatter"
+LOG_FILE = './outfile/scrapy.log'
+LOG_ENABLED = True
+LOG_STDOUT = False 
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
