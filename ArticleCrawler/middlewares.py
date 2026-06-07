@@ -7,7 +7,9 @@ from scrapy import signals
 
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
-
+from scrapy.http import HtmlResponse
+from curl_cffi import requests as curl_requests
+from scrapy import signals
 
 class ArticlecrawlerSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
@@ -109,30 +111,40 @@ class CurlCffiMiddleware:
     def from_crawler(cls, crawler):
         middleware = cls()
         crawler.signals.connect(middleware.spider_opened, signals.spider_opened)
+        # 保存 crawler 实例以访问 spider
+        middleware.crawler = crawler
         return middleware
 
     def spider_opened(self, spider):
         spider.logger.info("CurlCffiMiddleware enabled for ALL requests")
 
-    async def process_request(self, request, spider):
-        # 不再对域名进行判断，所有请求都处理
-
-        # 构建请求头（转换 Scrapy Headers 格式）
+    async def process_request(self, request):
+        # 构建请求头时，排除会破坏指纹的标头
         headers = {}
+        # 必须排除的标头，由 impersonate 自动生成
+        skip_headers = {
+            'accept', 
+            'user-agent', 'accept-language', 'accept-encoding',
+            'sec-ch-ua', 'sec-ch-ua-mobile', 'sec-ch-ua-platform',
+            'sec-fetch-dest', 'sec-fetch-mode', 'sec-fetch-site', 'sec-fetch-user',
+            'cache-control', 'priority', 'upgrade-insecure-requests',
+        }
         for k, v in request.headers.items():
             key = k.decode('utf-8') if isinstance(k, bytes) else k
+            if key.lower() in skip_headers:
+                continue  # 跳过冲突标头
             if isinstance(v, list):
                 value = v[0].decode('utf-8') if v else ''
             else:
                 value = v.decode('utf-8') if isinstance(v, bytes) else v
             headers[key] = value
 
-        # 从 request.meta 获取自定义参数（可选）
-        impersonate = request.meta.get('impersonate', 'chrome120')
+        impersonate = request.meta.get('impersonate', 'safari15_5')
         timeout = request.meta.get('timeout', 30)
         method = request.method.upper()
         data = request.body
 
+        spider = self.crawler.spider
         spider.logger.debug(f"CurlCffiMiddleware: {method} {request.url}")
 
         try:
@@ -144,7 +156,7 @@ class CurlCffiMiddleware:
                         headers=headers,
                         impersonate=impersonate,
                         timeout=timeout,
-                        follow_redirects=True
+                        allow_redirects=True
                     )
                 elif method == 'POST':
                     response = await session.post(
@@ -153,7 +165,7 @@ class CurlCffiMiddleware:
                         data=data,
                         impersonate=impersonate,
                         timeout=timeout,
-                        follow_redirects=True
+                        allow_redirects=True
                     )
                 else:
                     # 其他方法可自行扩展
@@ -161,14 +173,18 @@ class CurlCffiMiddleware:
 
         except Exception as e:
             spider.logger.error(f"CurlCffiMiddleware request failed: {e}")
-            # 因为所有请求都接管了，失败时直接返回错误响应或重新抛出异常
-            raise
-
+            raise  # 必须有 except 块捕获异常
+            
+        # 处理响应头
+        resp_headers = dict(response.headers)
+        resp_headers.pop('Content-Encoding', None)
+        resp_headers.pop('content-encoding', None)
+        
         # 构造 Scrapy Response
         return HtmlResponse(
             url=response.url,
             status=response.status_code,
-            headers=dict(response.headers),
+            headers=resp_headers,
             body=response.content,
             encoding='utf-8',
             request=request
