@@ -1,6 +1,7 @@
 import json
 import requests
 from datetime import datetime
+from lxml import html
 
 def load_data():
     with open('./outfile/bnldata.json', 'r', encoding='utf-8') as f:
@@ -21,17 +22,50 @@ def convert_time(iso_time):
         # 如果解析失败，返回原字符串（或空）
         return iso_time
 
+def upload(file_path):
+    with open(file_path, 'rb') as f:
+        files = {'file': f}
+        files = {
+            "file": (file_path.split("/")[-1], f, "image/jpeg")
+        }
+        proxy_url = 'http://127.0.0.1:7890'
+
+        proxies = {'http': proxy_url, 'https': proxy_url}
+
+        response = requests.post(
+            'https://wk.itheihai.com/api/common/upload',
+        proxies=proxies, files=files).json()
+        return response.get("data").get("fullurl")
+
 def submit_data(data):
     # 处理时间字段
     publish_time = data.get('publish_time', '')
     formatted_time = convert_time(publish_time)
+    # 匹配content中的图片链接
+    tree = html.fromstring(data.get('content', ''))
+    # 提取所有 img 标签的 src 属性
+    img_srcs = tree.xpath('//img/@src')
 
+    if img_srcs:
+        for src in img_srcs:
+            # 上传文件
+            url = upload("./images" + src)
+            # 替换 content 中的图片链接
+            data['content'] = data['content'].replace(src, url)
+    else:
+        return 0
+    # 获取处理后的content
+    content = data.get('content', '')
+    # 保存为html
+    with open('./outfile/content.html', 'w', encoding='utf-8') as f:
+        f.write(content)
+        return 1
     # 构建请求参数
     payload = {
         'title': data.get('title', ''),
         'summary': data.get('summary', ''),
         'url': data.get('url', ''),
-        'content': data.get('content', ''),
+        'content': content,
         'author_name': data.get('author_name', ''),
         'author_avatar': data.get('author_avatar', ''),
         'publishtime': formatted_time,      # 使用转换后的时间
@@ -59,5 +93,6 @@ def submit_data(data):
 if __name__ == '__main__':
     data_list = load_data()
     for item in data_list:
-        submit_data(item)
-        break   # 仅测试第一条时取消注释
+        if submit_data(item):
+            break
+        # break   # 仅测试第一条时取消注释

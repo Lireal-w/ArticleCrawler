@@ -214,6 +214,10 @@ class BnldataSpider(scrapy.Spider):
             parent = ad.getparent()
             if parent is not None:
                 parent.remove(ad)
+        for div in editor_element.xpath('.//div[contains(@class, "single-header__info")]'):
+            parent = div.getparent()
+            if parent is not None:
+                parent.remove(div)
         for script in editor_element.xpath('.//script'):
             parent = script.getparent()
             if parent is not None:
