@@ -14,12 +14,12 @@ NEWSPIDER_MODULE = "ArticleCrawler.spiders"
 
 ADDONS = {}
 
-
+TWISTED_REACTOR = 'twisted.internet.asyncioreactor.AsyncioSelectorReactor'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "ArticleCrawler (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Concurrency and throttling settings
 #CONCURRENT_REQUESTS = 16
@@ -33,11 +33,19 @@ DOWNLOAD_DELAY = 1
 #TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
-#    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-#    "Accept-Language": "en",
-#}
-
+DEFAULT_REQUEST_HEADERS = {
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+    'cache-control': 'max-age=0',
+    'priority': 'u=0, i',
+    'sec-ch-ua': '"Chromium";v="148", "Microsoft Edge";v="148", "Not/A)Brand";v="99"',
+    'sec-fetch-dest': 'document',
+    'sec-fetch-mode': 'navigate',
+    'sec-fetch-site': 'same-origin',
+    'sec-fetch-user': '?1',
+    'upgrade-insecure-requests': '1',
+    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36 Edg/148.0.0.0',
+}
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 #SPIDER_MIDDLEWARES = {
@@ -48,6 +56,7 @@ DOWNLOAD_DELAY = 1
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
 #    "ArticleCrawler.middlewares.ArticlecrawlerDownloaderMiddleware": 543,
+    'ArticleCrawler.middlewares.CurlCffiMiddleware': 543,      # 核心中间件
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_ua_rotator.middleware.RandomUserAgentMiddleware': 400,
     'scrapy_ua_rotator.middleware.RetryUserAgentMiddleware': 550,
@@ -59,11 +68,11 @@ DOWNLOADER_MIDDLEWARES = {
 #    "scrapy.extensions.telnet.TelnetConsole": None,
 #}
 
-USERAGENT_PROVIDERS = [
-    'scrapy_ua_rotator.providers.FakeUserAgentProvider',
-    'scrapy_ua_rotator.providers.FakerProvider',
-    'scrapy_ua_rotator.providers.FixedUserAgentProvider',
-]
+# USERAGENT_PROVIDERS = [
+#     'scrapy_ua_rotator.providers.FakeUserAgentProvider',
+#     'scrapy_ua_rotator.providers.FakerProvider',
+#     'scrapy_ua_rotator.providers.FixedUserAgentProvider',
+# ]
 
 
 # Configure item pipelines
@@ -101,3 +110,8 @@ FEED_EXPORT_ENCODING = "utf-8"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36"
 JSON_OUTPUT_DIR = './outfile'
 IMAGES_STORE = './images'
+
+DOWNLOAD_HANDLERS = {
+    "http": None,
+    "https": None,
+}

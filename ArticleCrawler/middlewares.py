@@ -98,3 +98,78 @@ class ArticlecrawlerDownloaderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
+
+
+class CurlCffiMiddleware:
+    """
+    全局使用 curl_cffi 发送所有请求，替代 Scrapy 默认下载器。
+    """
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        middleware = cls()
+        crawler.signals.connect(middleware.spider_opened, signals.spider_opened)
+        return middleware
+
+    def spider_opened(self, spider):
+        spider.logger.info("CurlCffiMiddleware enabled for ALL requests")
+
+    async def process_request(self, request, spider):
+        # 不再对域名进行判断，所有请求都处理
+
+        # 构建请求头（转换 Scrapy Headers 格式）
+        headers = {}
+        for k, v in request.headers.items():
+            key = k.decode('utf-8') if isinstance(k, bytes) else k
+            if isinstance(v, list):
+                value = v[0].decode('utf-8') if v else ''
+            else:
+                value = v.decode('utf-8') if isinstance(v, bytes) else v
+            headers[key] = value
+
+        # 从 request.meta 获取自定义参数（可选）
+        impersonate = request.meta.get('impersonate', 'chrome120')
+        timeout = request.meta.get('timeout', 30)
+        method = request.method.upper()
+        data = request.body
+
+        spider.logger.debug(f"CurlCffiMiddleware: {method} {request.url}")
+
+        try:
+            async with curl_requests.AsyncSession() as session:
+                # 根据请求方法选择
+                if method == 'GET':
+                    response = await session.get(
+                        request.url,
+                        headers=headers,
+                        impersonate=impersonate,
+                        timeout=timeout,
+                        follow_redirects=True
+                    )
+                elif method == 'POST':
+                    response = await session.post(
+                        request.url,
+                        headers=headers,
+                        data=data,
+                        impersonate=impersonate,
+                        timeout=timeout,
+                        follow_redirects=True
+                    )
+                else:
+                    # 其他方法可自行扩展
+                    raise ValueError(f"Unsupported method: {method}")
+
+        except Exception as e:
+            spider.logger.error(f"CurlCffiMiddleware request failed: {e}")
+            # 因为所有请求都接管了，失败时直接返回错误响应或重新抛出异常
+            raise
+
+        # 构造 Scrapy Response
+        return HtmlResponse(
+            url=response.url,
+            status=response.status_code,
+            headers=dict(response.headers),
+            body=response.content,
+            encoding='utf-8',
+            request=request
+        )
