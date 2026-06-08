@@ -5,11 +5,9 @@ import os
 import tempfile
 from datetime import datetime
 from lxml import html, etree
+from ..env import WP_URL, USERNAME, APP_PASSWORD
 
-# ==================== WordPress 配置 ====================
-WP_URL = ""  # 你的 WordPress 网址（末尾不要加斜杠）
-USERNAME = ""  # 你的 WordPress 用户名
-APP_PASSWORD = ""  # 24位应用程序密码（带不带空格都可以）
+
 PROXY_URL = 'http://127.0.0.1:7890'              # 代理（不需要可设为 None）
 proxies = {'http': PROXY_URL, 'https': PROXY_URL} if PROXY_URL else None
 
@@ -153,7 +151,7 @@ def convert_date_string(date_str):
         # 如果解析失败，返回原字符串（或尝试其他常见格式）
         return date_str
 
-def process_and_submit(data, wp_status="draft", cover_image_source=None):
+def process_and_submit(data, wp_status="draft"):
     """
     处理单条数据
     cover_image_source: 可以是本地路径或远程 URL
@@ -164,7 +162,7 @@ def process_and_submit(data, wp_status="draft", cover_image_source=None):
     read_time = data.get('read_time', 0)
     publish_time_str = data.get('publish_time', '')
     formatted_time = convert_date_string(publish_time_str)
-
+    cover_image_source = data.get('cover_image', '')
     # 1. 清洗 HTML
     tree = html.fromstring(raw_content)
 
@@ -244,7 +242,7 @@ if __name__ == '__main__':
         # cover = "./images/cover.jpg"
         # cover = "https://example.com/cover.jpg"
         cover = None   # 没有封面图
-        process_and_submit(first_data, wp_status="draft", cover_image_source=cover)
+        process_and_submit(first_data, wp_status="draft")
 
     # 批量处理（取消注释）
     # for item in data_list:

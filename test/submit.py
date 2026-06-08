@@ -111,7 +111,18 @@ def submit_data(data):
 if __name__ == '__main__':
     data_list = load_data()
     print(f"共 {len(data_list)} 条数据")
-    
+    for item in data_list:
+        # 匹配正文存在的图片路径
+        if item.get("content"):
+            # 匹配content中的图片链接
+            tree = html.fromstring(item.get('content', ''))
+            img_srcs = tree.xpath('//img/@src')
+            if img_srcs:
+                # 输出链接
+                print(f"标题：{item.get('title')}")
+                print(f"图片链接：{img_srcs}")
+                print('------------------------')
+    # 保存为html
     # guo = False
     # for item in data_list:
     #     if item.get("title") == "Nova York inaugura primeiro cassino completo e movimenta US$ 17,6 bi em investimentos":
