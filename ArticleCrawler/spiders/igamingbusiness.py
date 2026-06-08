@@ -93,6 +93,18 @@ class IgamingbusinessSpider(scrapy.Spider):
             word_count = len(content_text)
             read_time = str(max(1, math.ceil(word_count / 300)))
         item['read_time'] = read_time
+        
+        cover = response.css('.c-single-post-featured-image::attr(src)').get()
+        if not cover:
+            # 备选：查找文章开头的 <picture> 内的 img
+            cover = response.css('picture img.wp-post-image::attr(src)').get()
+        if not cover:
+            # 再备选：任何 class 包含 wp-post-image 的 img
+            cover = response.css('img.wp-post-image::attr(src)').get()
+        if cover:
+            item['cover_image'] = urljoin(response.url, cover)
+        else:
+            item['cover_image'] = ''
         content_div = response.css('div.u-user-content')
         if not content_div:
             content_div = response.css('article .entry-content')

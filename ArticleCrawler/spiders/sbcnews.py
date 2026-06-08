@@ -23,6 +23,7 @@ class SbcnewsSpider(SunSpider):
             if self.is_seen_url(absolute_url):
                 return # 当遇到已抓取过的链接，直接返回
             yield Request(absolute_url, callback=self.parse_article)
+            self.add_seen_url(absolute_url)
 
         # 2. 翻页逻辑：寻找“下一页”按钮
         next_page = response.css('div.sbc-pagination a.next.page-numbers::attr(href)').get()
@@ -83,6 +84,14 @@ class SbcnewsSpider(SunSpider):
             word_count = len(content_text)
             read_time = str(max(1, math.ceil(word_count / 300)))
         item['read_time'] = read_time
+        cover = response.css('div.post__thumbnail img::attr(src)').get()
+        if not cover:
+            # 方法2：从正文内容中找第一张图片
+            first_img = response.css('div.post__content-inner img::attr(src)').get()
+            if first_img:
+                cover = first_img
+        if cover:
+            item['cover_image'] = urljoin(response.url, cover)
 
         # ----- 正文HTML处理（清洗广告、脚本等）-----
         content_selector = 'div.post__content-inner'
@@ -107,6 +116,10 @@ class SbcnewsSpider(SunSpider):
             parent = script.getparent()
             if parent is not None:
                 parent.remove(script)
+        for iframe in content_element.xpath('.//iframe'):
+            parent = iframe.getparent()
+            if parent is not None:
+                parent.remove(iframe)
 
         # 将清洗后的HTML转为字符串
         cleaned_html = etree.tostring(content_element, encoding='unicode', method='html')
