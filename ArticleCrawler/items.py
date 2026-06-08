@@ -35,3 +35,6 @@ class ArticleItem(scrapy.Item):
     content = scrapy.Field()      # 正文 HTML（图片替换后）
     image_urls = scrapy.Field()   # 临时存储图片 URL 列表
     images = scrapy.Field()       # ImagesPipeline 结果
+
+    # 封面图 URL
+    cover_image = scrapy.Field()
