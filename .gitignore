@@ -5,4 +5,4 @@ __pycache__/
 .vscode/
 goal
 crawled_articles/
-env.py
+.env
