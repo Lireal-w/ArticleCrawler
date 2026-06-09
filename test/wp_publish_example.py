@@ -273,8 +273,7 @@ def process_and_submit(data, wp_status="draft"):
         status=wp_status,
         publish_date=formatted_time,
         featured_media_id=featured_id,
-        read_time=read_time,
-        author= get_or_create_user_by_username(username=data.get('author_name', ''),role='author')
+        read_time=read_time
     )
 
     if result:
