@@ -6,9 +6,9 @@ import math
 from lxml import etree
 
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
-
-class IgamingbusinessSpider(scrapy.Spider):
+class IgamingbusinessSpider(SunSpider):
     name = "igamingbusiness"
     allowed_domains = None
 
@@ -70,11 +70,13 @@ class IgamingbusinessSpider(scrapy.Spider):
             }
             article_url = api_data['url']
             if article_url:
+                if self.is_seen_url(article_url):continue
                 yield scrapy.Request(
                     url=article_url,
                     callback=self.parse_article,
                     meta={'api_data': api_data},
                 )
+                self.mark_url_as_seen(article_url)
 
         # 翻页
         page_info = data.get('meta', {}).get('page', {})

@@ -4,8 +4,9 @@ import scrapy
 from lxml import etree
 from urllib.parse import urljoin
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
-class SigmaSpider(scrapy.Spider):
+class SigmaSpider(SunSpider):
     name = "sigma"
     allowed_domains = ["sigma.world"]
     start_urls = ["https://sigma.world/latest-news/online/"]
@@ -26,9 +27,10 @@ class SigmaSpider(scrapy.Spider):
         for link in all_links:
             # 确保链接是绝对路径
             absolute_url = response.urljoin(link)
+            if self.is_seen_url(absolute_url):continue
             yield scrapy.Request(url=absolute_url, callback=self.parse_article,
                                  meta={'source_url': response.url})
-            return
+            self.mark_url_as_seen(absolute_url)
 
         # 2. 翻页逻辑：寻找下一页链接
         next_page = self.get_next_page_url(response)

@@ -5,9 +5,10 @@ import math
 from lxml import etree
 
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
 
-class EnvmediaSpider(scrapy.Spider):
+class EnvmediaSpider(SunSpider):
     name = "envMedia"
     allowed_domains = ["env.media"]
     # 建议实际使用时改为 "https://env.media/press-release/" 或保留首页
@@ -36,13 +37,15 @@ class EnvmediaSpider(scrapy.Spider):
                 avatar_url = response.urljoin(avatar)
             else:
                 avatar_url = None
-
+            if self.is_seen_url(article_url):
+                return
             # 发起详情请求，将头像URL暂存于meta
             yield scrapy.Request(
                 url=article_url,
                 callback=self.parse_article,
                 meta={'author_avatar': avatar_url}
             )
+            self.mark_url_as_seen(article_url)
 
         # 3. 翻页逻辑
         next_url = self.get_next_page_url(response)

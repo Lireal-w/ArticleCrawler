@@ -26,6 +26,8 @@ class JsonFilePipeline:
     def open_spider(self, spider):
         # 1. 获取输出目录（默认 /outfile，可在 settings 中修改）
         output_dir = spider.settings.get('JSON_OUTPUT_DIR', '/outfile')
+        # 目录添加日期前缀
+        output_dir = os.path.join(output_dir, time.strftime('%Y%m%d'))
         # 2. 确保目录存在
         os.makedirs(output_dir, exist_ok=True)
         # 3. 构造文件路径：目录/爬虫名称_时间戳.json

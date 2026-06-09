@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 from lxml import etree
 import math
 from ..items import ArticleItem  # 导入你定义的Item类
+from ..utils.SunSpider import SunSpider
 
 def extract_text_and_images(element):
     """
@@ -24,7 +25,7 @@ def extract_text_and_images(element):
                 parts.append(text)
     return ''.join(parts)
 
-class BnldataSpider(scrapy.Spider):
+class BnldataSpider(SunSpider):
     name = "bnldata"
     allowed_domains = ["bnldata.com.br"]
     start_urls = ["https://bnldata.com.br/editorias/"]
@@ -51,6 +52,8 @@ class BnldataSpider(scrapy.Spider):
         for article in articles:
             article_url = article.css('div.card__image a::attr(href)').get()
             if article_url:
+                if self.is_seen_url(article_url):
+                    return
                 yield scrapy.Request(url=article_url, callback=self.parse_article)
         
         current_page = 1

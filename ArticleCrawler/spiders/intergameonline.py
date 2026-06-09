@@ -4,10 +4,11 @@ import math
 from urllib.parse import urljoin
 from lxml import etree
 
-from ..items import ArticleItem  # 假设 items.py 已定义 ArticleItem
+from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
 
-class IntergameonlineSpider(scrapy.Spider):
+class IntergameonlineSpider(SunSpider):
     name = "intergameonline"
     allowed_domains = ["intergameonline.com"]
     start_urls = ["https://www.intergameonline.com/sports-betting/news"]  # 新闻列表起始页
@@ -25,7 +26,9 @@ class IntergameonlineSpider(scrapy.Spider):
         # 去重并转为绝对URL
         for link in set(article_links):
             absolute_url = response.urljoin(link)
+            if self.is_seen_url(absolute_url):continue
             yield scrapy.Request(url=absolute_url, callback=self.parse_article)
+            self.mark_url_as_seen(absolute_url)
 
         # 2. 翻页逻辑：寻找“Next page”按钮
         next_page = response.css('a.btn[aria-label="Next page"]::attr(href)').get()

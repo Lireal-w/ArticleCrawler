@@ -4,8 +4,9 @@ import re
 import math
 from lxml import etree
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
-class GamblinginsiderSpider(scrapy.Spider):
+class GamblinginsiderSpider(SunSpider):
     name = "gamblinginsider"
     allowed_domains = ["gamblinginsider.com"]
     start_urls = ["https://www.gamblinginsider.com/news"]
@@ -24,8 +25,9 @@ class GamblinginsiderSpider(scrapy.Spider):
 
         for link in article_links:
             absolute_url = response.urljoin(link)
+            if self.is_seen_url(absolute_url):continue
             yield scrapy.Request(url=absolute_url, callback=self.parse_article)
-
+            self.mark_url_as_seen(absolute_url)
         # 2. 翻页逻辑：查找下一页链接
         next_page = self.get_next_page_url(response)
         if next_page:
@@ -62,9 +64,7 @@ class GamblinginsiderSpider(scrapy.Spider):
         """
         解析文章详情页，提取所有需要的字段
         """
-        from ..items import ArticleItem
-        from lxml import etree
-        from urllib.parse import urljoin
+        
 
         item = ArticleItem()
 

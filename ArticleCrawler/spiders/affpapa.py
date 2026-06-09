@@ -4,9 +4,10 @@ from urllib.parse import urljoin
 from lxml import etree
 import scrapy
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
 
-class AffpapaSpider(scrapy.Spider):
+class AffpapaSpider(SunSpider):
     name = "affpapa"
     allowed_domains = ["affpapa.com"]
     start_urls = [
@@ -28,7 +29,10 @@ class AffpapaSpider(scrapy.Spider):
         article_links = response.css('article.custompost h3 a::attr(href)').getall()
         for link in article_links:
             absolute_url = response.urljoin(link)
+            if self.is_seen_url(absolute_url):
+                return
             yield scrapy.Request(url=absolute_url, callback=self.parse_article)
+            self.mark_url_as_seen(absolute_url)
 
         # 2. 翻页：获取下一页的链接
         next_page = self.get_next_page_url(response)
@@ -56,9 +60,6 @@ class AffpapaSpider(scrapy.Spider):
             # 第一页：/category/top-news/  -->  /category/top-news/pages/2/
             base = response.url.rstrip('/')
             return f"{base}/pages/2/"
-
-        return None
-
     # ------------------------------------------------------------------
     # 详情页解析
     # ------------------------------------------------------------------

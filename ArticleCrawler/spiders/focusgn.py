@@ -5,9 +5,10 @@ import re
 import math
 
 from ..items import ArticleItem
+from ..utils.SunSpider import SunSpider
 
 
-class FocusgnSpider(scrapy.Spider):
+class FocusgnSpider(SunSpider):
     name = "focusgn"
     allowed_domains = ["focusgn.com"]
     start_urls = ["https://focusgn.com/category/sportsbetting-news"]
@@ -17,14 +18,11 @@ class FocusgnSpider(scrapy.Spider):
         解析新闻列表页，提取文章详情链接并生成请求，同时处理翻页
         """
         article_links = response.css('.news-grid .grid-article a::attr(href)').getall()
-        seen = set()
         for link in article_links:
-            if link in seen:
-                continue
-            seen.add(link)
             absolute_url = response.urljoin(link)
+            if self.is_seen_url(absolute_url):continue
             yield scrapy.Request(url=absolute_url, callback=self.parse_article)
-            return
+            self.mark_url_as_seen(absolute_url)
 
         next_page = self.get_next_page_url(response)
         if next_page:
