@@ -1,39 +1,50 @@
+# 📰 ArticleCrawler: Scrapy + FastAPI 定时文章爬虫
 
-# 📰 Scrapy + APScheduler 定时文章爬虫
-
-一个基于 **Scrapy** 爬虫框架与 **APScheduler** 定时任务库的文章采集系统，支持定时自动抓取文章，并提取标题、摘要、作者信息、时间字段以及预估阅读时间。
+基于 Scrapy 与 APScheduler 的增量式新闻聚合爬虫，支持自动去重、图片本地化、代理与反反爬，并可通过 FastAPI 接口管理定时任务。
 
 ## ✨ 功能特性
 
-- 🕷️ **Scrapy 异步爬虫** – 高效稳定，支持并发请求与中间件扩展
-- ⏰ **APScheduler 任务调度** – 支持 Cron 表达式、固定间隔、单次执行等灵活配置
-- 📦 **结构化数据字段** – 包含标题、摘要、网址、作者姓名/头像、发布时间、修改时间、预估阅读时间
-- 🔁 **独立调度脚本 / 项目内集成** 两种模式可选
-- 🧩 **易于扩展** – 可无缝对接数据库（MySQL、MongoDB）、日志告警、代理池等
+- **增量爬取**：基于 `SunSpider` 基类实现 URL 去重，避免重复抓取与数据冗余。
+- **多源适配**：内置 9 个博彩/游戏行业新闻源爬虫（如 `sigma`, `sbcnews`, `bnldata` 等）。
+- **图片本地化**：通过 `ArticleImagesPipeline` 自动下载正文图片，并将 HTML 中的 URL 替换为本地路径。
+- **反反爬支持**：集成 `CurlCffiMiddleware`，使用 `curl_cffi` 模拟真实浏览器指纹绕过防护。
+- **定时调度**：支持独立脚本调度（`scheduler.py`）与 FastAPI 生命周期内调度（`app.py`）。
+- **数据输出**：抓取结果自动导出为 JSON 文件，并支持一键发布至 WordPress 站点。
 
 ## 🛠️ 技术栈
 
-| 组件            | 技术选型                         |
-| --------------- | -------------------------------- |
-| 爬虫框架        | Scrapy 2.11+                     |
-| 定时调度        | APScheduler 3.10+                |
-| 数据存储（示例）| JSON / CSV / 可扩展至 MySQL/ES   |
-| 语言            | Python 3.9+                      |
+- **爬虫框架**：Scrapy, curl_cffi
+- **任务调度**：APScheduler
+- **Web 服务**：FastAPI, Uvicorn
+- **数据处理**：lxml, Pillow (ImagesPipeline)
+- **发布对接**：WordPress REST API
 
 ## 📁 项目结构
 
-```
-article_crawler/
-├── article_crawler/           # Scrapy 项目主目录
-│   ├── spiders/               # 爬虫代码目录
-│   │   └── example_spider.py  # 示例爬虫
-│   ├── items.py               # 定义 Item 字段（见下方）
-│   ├── middlewares.py
-│   ├── pipelines.py
-│   └── settings.py
-├── run_scheduler.py           # 独立调度脚本（推荐）
-├── requirements.txt           # 依赖清单
-└── README.md
+```text
+ArticleCrawler/
+├── ArticleCrawler/
+│   ├── spiders/              # 爬虫模块
+│   │   ├── bnldata.py        # 支持AJAX分页的爬虫示例
+│   │   ├── igamingbusiness.py# 基于API接口的爬虫示例
+│   │   ├── focusgn.py        # 继承scrapy.Spider的基础爬虫
+│   │   └── ...               # 其他均继承自SunSpider
+│   ├── utils/
+│   │   └── SunSpider.py      # 增量爬虫基类（URL去重逻辑）
+│   ├── items.py              # 数据结构定义
+│   ├── middlewares.py        # 下载中间件（含CurlCffiMiddleware）
+│   ├── pipelines.py          # 数据管道（JSON存储与图片下载替换）
+│   ├── settings.py           # 全局配置（代理、并发、输出路径）
+│   └── log_formatter.py      # 日志格式化（静默Item输出）
+├── outfile/                  # JSON数据与日志输出目录
+├── images/                   # 图片本地存储目录
+├── test/                     # 测试与发布脚本
+│   ├── test_sigma_spider.py  # 指纹模拟测试
+│   ├── submit.py             # 数据提交测试
+│   └── wplist_publish.py     # 多站点WordPress批量发布
+├── app.py                    # FastAPI + APScheduler 集成示例
+├── scheduler.py              # 独立定时调度脚本
+└── run.py                    # 爬虫批量启动入口
 ```
 
 ## 🚀 快速开始
@@ -41,116 +52,69 @@ article_crawler/
 ### 1. 克隆项目并安装依赖
 
 ```bash
-git clone https://github.com/yourname/article-crawler.git
-cd article-crawler
+git clone <repository-url>
+cd ArticleCrawler
 pip install -r requirements.txt
 ```
 
-`requirements.txt` 示例内容：
+### 2. 配置环境
 
+在 `ArticleCrawler/settings.py` 中修改核心配置：
+
+- **代理设置**：修改 `HTTP_PROXY` 与 `HTTPS_PROXY`（默认 `127.0.0.1:7890`）。
+- **并发控制**：调整 `CONCURRENT_REQUESTS_PER_DOMAIN` 与 `DOWNLOAD_DELAY`。
+- **输出路径**：修改 `JSON_OUTPUT_DIR` 与 `IMAGES_STORE`。
+
+### 3. 运行爬虫
+
+**方式一：运行指定爬虫**
+```bash
+scrapy crawl sigma
 ```
-scrapy>=2.11.0
-apscheduler>=3.10.0
+
+**方式二：批量运行多个爬虫**
+```bash
+python run.py
 ```
+*注：`run.py` 默认执行 `gamblinginsider`, `igamingbusiness` 等 5 个爬虫。*
 
-### 2. 配置定时任务
-
-本项目提供两种集成方式，推荐使用 **独立调度脚本**。
+### 4. 启动定时任务
 
 #### ✅ 方式一：独立调度脚本（简单可靠）
-
-在项目根目录创建 `run_scheduler.py`：
-
-```python
-import subprocess
-import logging
-from apscheduler.schedulers.blocking import BlockingScheduler
-
-logging.basicConfig(level=logging.INFO)
-
-def crawl_job():
-    logging.info("启动爬虫任务...")
-    result = subprocess.run(["scrapy", "crawl", "example"], capture_output=True, text=True)
-    if result.returncode == 0:
-        logging.info("爬虫执行成功")
-    else:
-        logging.error(f"执行失败: {result.stderr}")
-
-if __name__ == "__main__":
-    scheduler = BlockingScheduler()
-    # 每天 8:00 执行
-    scheduler.add_job(crawl_job, "cron", hour=8, minute=0)
-    # 或每 30 分钟执行一次
-    # scheduler.add_job(crawl_job, "interval", minutes=30)
-    scheduler.start()
-```
-
-运行：
-
+直接运行调度器，默认每天凌晨 0:00 执行一次：
 ```bash
-python run_scheduler.py
+python scheduler.py
 ```
 
-#### ✅ 方式二：项目内集成（便于扩展）
-
-直接在 Scrapy 项目中启动后台调度器，参见 `article_crawler/scheduler.py` 示例。
-
-### 5. 保存数据
-
-Scrapy 支持多种输出格式，例如：
-
+#### ✅ 方式二：FastAPI 集成调度（便于扩展）
+启动 Web 服务，任务将在生命周期内自动运行（默认每 10 秒打印一次日志作为演示）：
 ```bash
-# 输出为 JSON 文件
-scrapy crawl example -o articles.json
-
-# 输出为 CSV
-scrapy crawl example -o articles.csv
+python app.py
+# 或
+uvicorn app:app --host 0.0.0.0 --port 8000
 ```
-
-如需持久化到数据库，可编写 Pipeline 并开启 `ITEM_PIPELINES`。
 
 ## ⚙️ 高级配置
 
-### 定时触发器
+### 增量爬虫基类
 
-| 触发器      | 示例                                      | 说明               |
-| ----------- | ----------------------------------------- | ------------------ |
-| `cron`      | `hour=8, minute=30`                       | 每天 8:30 执行     |
-| `cron`      | `day_of_week='mon-fri', hour=9`           | 工作日 9:00 执行   |
-| `interval`  | `minutes=15`                              | 每隔 15 分钟执行   |
-| `date`      | `run_date='2025-01-01 00:00:00'`          | 单次执行           |
+所有继承 `SunSpider` 的爬虫自动具备增量抓取能力。基类在爬虫启动时从本地加载已爬取 URL 记录，关闭时持久化，通过 `is_seen_url` 过滤重复请求。
 
-### 生成预计阅读时间
+### 图片下载与替换
 
-建议在爬虫中动态计算：
+`ArticleImagesPipeline` 继承自 Scrapy 的 `ImagesPipeline`。它不仅将图片下载至 `./images`，还会自动将 `item['content']` HTML 中的原始图片 URL 替换为本地相对路径，实现正文内容的完全本地化。
 
-```python
-import random
-import math
+### WordPress 自动发布
 
-text_content = "".join(article.css("div.content *::text").getall())
-word_count = len(text_content)
-read_time = max(1, math.ceil(word_count / 600))  # 假设 600字/分钟
-item["read_time"] = str(read_time)
-# 或随机生成
-item["read_time"] = str(random.randint(3, 10))
-```
+使用 `test/wplist_publish.py` 可将抓取的 JSON 数据自动发布至多个 WordPress 站点：
+1. 配置脚本中的 `SITES` 列表（包含站点URL、用户名、应用密码）。
+2. 自动下载远程封面图并上传至 WP 媒体库。
+3. 处理发布时间并创建文章（默认为草稿状态）。
 
 ## 🔧 常见问题
 
-**Q：如何避免爬虫任务重叠？**  
-A：可在调度函数开头添加锁文件或检查进程是否已在运行。
+- **为何部分网站抓取失败？**  
+  部分站点具有严格的反爬机制，项目默认启用了 `CurlCffiMiddleware` 模拟真实浏览器指纹。如仍失败，可尝试在 `test/` 目录下运行指纹测试脚本寻找可用指纹。
 
-**Q：调度器关闭后任务会丢失吗？**  
-A：APScheduler 默认内存存储，重启会丢失。如需持久化可使用 `SQLAlchemyJobStore`。
-
-**Q：Scrapy 和 APScheduler 日志冲突？**  
-A：统一使用 Python `logging` 配置即可，两者均兼容。
-
-## 📄 开源许可
-
-[MIT License](LICENSE)
-
-## 🤝 贡献与反馈
-
-欢迎提交 Issue 或 Pull Request。如有定制化需求，可参考 [Scrapy 官方文档](https://docs.scrapy.org/) 与 [APScheduler 文档](https://apscheduler.readthedocs.io/)。
+- **如何添加新的爬虫？**  
+  大部分情况建议继承 `SunSpider`，实现 `parse`（列表页）、`parse_article`（详情页）及 `get_next_page_url`（分页逻辑）即可，无需关心去重逻辑。若需特殊控制，可如 `focusgn.py` 直接继承 `scrapy.Spider`。

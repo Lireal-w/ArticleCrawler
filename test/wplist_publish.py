@@ -19,13 +19,13 @@ SITES = [
     # {"url": "https://wealthtide.vip", "username": "admin", "app_password": "jly9 DEzT qi1G Uq4u xArU XDAF"},
     # {"url": "https://lucksystar.vip", "username": "admin", "app_password": "Q7aF qJxJ bw9x pJ3o cr2i CqrO"},
     # {"url": "https://bettingtableshadow.com", "username": "admin", "app_password": "ffF7 HqDV UsZO 7KCY 5KSF iixx"},
-    {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
-    {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
-    {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
+    # {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
+    # {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
+    # {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
     {"url": "https://goldmedalhand.com", "username": "admin", "app_password": "gvLu 12iq ViuK Xg4w SCmW Xg4w"},
-    {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
-    {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
-    {"url": "https://winhappy.vip", "username": "admin", "app_password": "dzpm vjZp HlGN ReHb 5JH8 BtYL"},
+    # {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
+    # {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
+    # {"url": "https://winhappy.vip", "username": "admin", "app_password": "dzpm vjZp HlGN ReHb 5JH8 BtYL"},
 ]
 
 def get_auth(username, app_password):
@@ -202,7 +202,7 @@ def load_data():
 if __name__ == '__main__':
     # 生成 20 篇文章数据
     articles_to_publish = load_data()
-    current = 60
+    current = 80
     for site in SITES:
         wp_url = site["url"].rstrip('/')
         username = site["username"]
