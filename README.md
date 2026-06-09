@@ -1,5 +1,3 @@
-根据提供的代码结构和原始README信息，我来生成一个优化后的README文档：
-
 # 📰 ArticleCrawler
 
 基于 Scrapy 与 APScheduler 的增量式新闻聚合爬虫，支持自动去重、图片本地化、代理与反反爬，并可通过 FastAPI 接口管理定时任务。
@@ -7,7 +5,6 @@
 ## ✨ 功能特性
 
 - **增量爬取**：基于 `SunSpider` 基类实现 URL 去重，避免重复抓取与数据冗余
-- **多源适配**：内置 9 个博彩/游戏行业新闻源爬虫（sigma, sbcnews, bnldata, igamingbusiness, gamblinginsider, intergameonline, focusgn, envMedia, affpapa）
 - **图片本地化**：通过 `ArticleImagesPipeline` 自动下载正文图片，并将 HTML 中的 URL 替换为本地路径
 - **反反爬支持**：集成 `CurlCffiMiddleware`，使用 `curl_cffi` 模拟真实浏览器指纹绕过防护
 - **定时调度**：支持独立脚本调度（`scheduler.py`）与 FastAPI 生命周期内调度（`app.py`）
@@ -28,9 +25,6 @@ ArticleCrawler/
 ├── ArticleCrawler/
 │   ├── spiders/              # 爬虫模块
 │   │   ├── sigma.py         # 基础爬虫示例
-│   │   ├── bnldata.py       # 支持AJAX分页的爬虫
-│   │   ├── igamingbusiness.py # 基于API接口的爬虫
-│   │   ├── focusgn.py       # 继承scrapy.Spider的基础爬虫
 │   │   └── ...              # 其他均继承自SunSpider
 │   ├── utils/
 │   │   └── SunSpider.py     # 增量爬虫基类（URL去重逻辑）
