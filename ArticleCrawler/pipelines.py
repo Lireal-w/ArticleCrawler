@@ -6,6 +6,7 @@
 
 # useful for handling different item types with a single interface
 import os
+import time
 import posixpath
 import scrapy
 from urllib.parse import urlparse
@@ -27,8 +28,10 @@ class JsonFilePipeline:
         output_dir = spider.settings.get('JSON_OUTPUT_DIR', '/outfile')
         # 2. 确保目录存在
         os.makedirs(output_dir, exist_ok=True)
-        # 3. 构造文件路径：目录/爬虫名称.json
-        file_path = os.path.join(output_dir, f"{spider.name}.json")
+        # 3. 构造文件路径：目录/爬虫名称_时间戳.json
+        # 生成时间戳（秒级）
+        timestamp = int(time.time())
+        file_path = os.path.join(output_dir, f"{spider.name}_{timestamp}.json")
         # 4. 打开文件并初始化 JsonItemExporter
         self.file = open(file_path, 'wb')
         self.exporter = JsonItemExporter(
