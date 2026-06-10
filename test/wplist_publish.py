@@ -22,7 +22,7 @@ SITES = [
     # {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
     # {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
     # {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
-    {"url": "https://goldmedalhand.com", "username": "admin", "app_password": "gvLu 12iq ViuK Xg4w SCmW Xg4w"},
+    {"url": "https://goldmedalhand.com", "username": "admin", "app_password": "NX1z XQDz nHjF i1OC aBU7 xkpP"},
     # {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
     # {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
     # {"url": "https://winhappy.vip", "username": "admin", "app_password": "dzpm vjZp HlGN ReHb 5JH8 BtYL"},
@@ -88,7 +88,7 @@ def upload_image_to_wp(wp_url, username, app_password, image_source):
         media_data = response.json()
         return media_data.get("id"), media_data.get("source_url")
     else:
-        print(f"✗ 图片上传失败 [{image_source}]，HTTP {response.status_code}")
+        print(f"✗ 图片上传失败 [{image_source}]，HTTP {response.json()}")
         return None, None
 
 def publish_post_to_wp(wp_url, username, app_password, title, content, excerpt="", status="draft", publish_date=None, featured_media_id=None, read_time=None):
@@ -102,12 +102,16 @@ def publish_post_to_wp(wp_url, username, app_password, title, content, excerpt="
     if excerpt:
         payload["excerpt"] = excerpt
     if publish_date:
-        if ' ' in publish_date and 'T' not in publish_date:
-            publish_date = publish_date.replace(' ', 'T')
-        payload["date"] = publish_date
-    if publish_date:
-        # 确保格式为 Y-m-d\TH:i:s
-        if ' ' in publish_date and 'T' not in publish_date:
+        # 🚀 修复：强制转为字符串，并判断是否为纯数字时间戳
+        publish_date = str(publish_date).strip()
+        if publish_date.isdigit() and len(publish_date) >= 10:
+            # 如果是秒级时间戳，转为 WordPress 要求的 ISO 8601 格式
+            try:
+                dt = datetime.fromtimestamp(int(publish_date[:10]))
+                publish_date = dt.strftime('%Y-%m-%dT%H:%M:%S')
+            except ValueError:
+                pass
+        elif ' ' in publish_date and 'T' not in publish_date:
             publish_date = publish_date.replace(' ', 'T')
         payload["date"] = publish_date
     if featured_media_id:
@@ -159,6 +163,11 @@ def process_and_submit(wp_url, username, app_password, data, wp_status="draft"):
     final_content = raw_content  # 后续替换
     for src in img_srcs:
         # 判断 src 是 URL 还是本地路径（以 ./images 开头或 / 开头等）
+        if not isinstance(src, str):
+            continue
+        src = str(src).strip()
+        if not src:
+            continue
         if src.startswith(('http://', 'https://')):
             # print(f"处理远程图片：{src}")
             _, wp_image_url = upload_image_to_wp(wp_url, username, app_password, src)
@@ -197,12 +206,12 @@ def process_and_submit(wp_url, username, app_password, data, wp_status="draft"):
 
     return result is not None
 def load_data():
-    with open('./outfile/20260609/igamingbusiness_1781009309.json', 'r', encoding='utf-8') as f:
+    with open('./outfile/20260610/lance_1781090633.json', 'r', encoding='utf-8') as f:
         return json.load(f)
 if __name__ == '__main__':
     # 生成 20 篇文章数据
     articles_to_publish = load_data()
-    current = 80
+    current = 0
     for site in SITES:
         wp_url = site["url"].rstrip('/')
         username = site["username"]
@@ -215,13 +224,13 @@ if __name__ == '__main__':
         #     print(f"[{wp_url}] 正在发布第 {index}/20 篇文章...")
         #     if process_and_submit(wp_url, username, app_password, article, wp_status="draft"):
         #         success_count += 1
-        try:
-            for i in range(1, 21):
-                if process_and_submit(wp_url, username, app_password, articles_to_publish[current], wp_status="draft"):
-                    success_count += 1
-                current += 1
-        except Exception as e:
-            print(f"发生错误: {e}")
+        # try:
+        for i in range(30):
+            if process_and_submit(wp_url, username, app_password, articles_to_publish[current], wp_status="draft"):
+                success_count += 1
+            current += 1
+        # except Exception as e:
+        #     print(f"发生错误: {e}")
             
                 
         print(f"==== 站点 {wp_url} 处理完毕，成功发布 {success_count}/20 篇 ====")
