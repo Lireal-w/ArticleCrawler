@@ -6,7 +6,7 @@ from lxml import etree
 
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
-
+from ..utils.time import parse_time_to_timestamp
 
 class EnvmediaSpider(SunSpider):
     name = "envMedia"
@@ -118,7 +118,7 @@ class EnvmediaSpider(SunSpider):
         if not pub_time:
             pub_time = response.css('.wp-block-post-date time::text').get()
         if pub_time:
-            item['publish_time'] = pub_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(pub_time.strip())
         item['modified_time'] = item.get('publish_time', '')
 
         # ----- 预计阅读时间 -----

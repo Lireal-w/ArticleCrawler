@@ -6,6 +6,7 @@ import math
 
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 class SbcnewsSpider(SunSpider):
     name = "sbcnews"
@@ -65,7 +66,7 @@ class SbcnewsSpider(SunSpider):
         # ----- 发布时间 -----
         publish_time = response.css('span.post-date::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(publish_time.strip())
         # 最后修改时间未单独提供，暂与发布时间相同
         item['modified_time'] = item.get('publish_time', '')
 

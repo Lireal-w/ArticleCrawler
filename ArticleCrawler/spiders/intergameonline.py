@@ -6,6 +6,7 @@ from lxml import etree
 
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 
 class IntergameonlineSpider(SunSpider):
@@ -70,7 +71,7 @@ class IntergameonlineSpider(SunSpider):
         # 发布时间：例如 "May 27, 2026"
         publish_time = response.css('div.text-byline .text-uppercase::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(publish_time.strip())
         else:
             # 备选：从卡片头部提取
             item['publish_time'] = ''

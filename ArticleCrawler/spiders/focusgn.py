@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 from lxml import etree
 import re
 import math
+import datetime
 
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
@@ -72,7 +73,10 @@ class FocusgnSpider(SunSpider):
 
         publish_time = response.css('.article-date::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            # item['publish_time'] = publish_time.strip()
+            # 将发布日期"05/07/26"转为秒级时间戳
+            publish_time = datetime.datetime.strptime(publish_time, "%m/%d/%y")
+            item['publish_time'] = publish_time.timestamp()
         # 修改时间：页面未单独提供，暂与发布时间相同
         item['modified_time'] = item.get('publish_time', '')
 

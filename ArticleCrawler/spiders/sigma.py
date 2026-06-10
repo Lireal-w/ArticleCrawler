@@ -5,6 +5,7 @@ from lxml import etree
 from urllib.parse import urljoin
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 class SigmaSpider(SunSpider):
     name = "sigma"
@@ -83,7 +84,7 @@ class SigmaSpider(SunSpider):
         # ----- 发布时间 -----
         publish_time = response.css('.post-date::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(publish_time.strip())
         item['modified_time'] = item.get('publish_time', '')
 
         # ----- 预计阅读时间 -----

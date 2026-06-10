@@ -5,6 +5,7 @@ import math
 from lxml import etree
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 class GamblinginsiderSpider(SunSpider):
     name = "gamblinginsider"
@@ -95,7 +96,7 @@ class GamblinginsiderSpider(SunSpider):
         # 取 "Updated on" 后面的日期
         publish_time = response.css('.post-byline__item-date::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(publish_time.strip())
         # 没有单独的修改时间，复用发布时间
         item['modified_time'] = item.get('publish_time', '')
 

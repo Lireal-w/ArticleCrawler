@@ -7,6 +7,7 @@ from lxml import etree
 import math
 from ..items import ArticleItem  # 导入你定义的Item类
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 def extract_text_and_images(element):
     """
@@ -55,7 +56,7 @@ class BnldataSpider(SunSpider):
                 if self.is_seen_url(article_url):
                     return
                 yield scrapy.Request(url=article_url, callback=self.parse_article)
-        
+                self.mark_url_as_seen(article_url)
         current_page = 1
         next_page = current_page + 1
 
@@ -176,13 +177,13 @@ class BnldataSpider(SunSpider):
                             break
                 except:
                     pass
-        item['publish_time'] = publish_time if publish_time else 'N/A'
+        item['publish_time'] = parse_time_to_timestamp(publish_time)
 
         # 最后修改时间：本页面没有明确的 modified_time，使用发布时间代替
         modified_time = response.css('meta[property="article:modified_time"]::attr(content)').get()
         if not modified_time:
             modified_time = publish_time  # 回退
-        item['modified_time'] = modified_time if modified_time else 'N/A'
+        item['modified_time'] = parse_time_to_timestamp(modified_time)
 
         # ----- 预计阅读时间 -----
         # 方法1：从 twitter:data2 获取（如 "3分钟"）
@@ -234,6 +235,7 @@ class BnldataSpider(SunSpider):
             if src:
                 absolute_url = urljoin(response.url, src)
                 img_urls.append(absolute_url)
+        item["cover_image"] = img_urls[0] if img_urls else ""
         item['image_urls'] = img_urls
         # item['content'] = extract_text_and_images(editor_element)
         yield item

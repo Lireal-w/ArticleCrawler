@@ -5,7 +5,7 @@ from lxml import etree
 import scrapy
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
-
+from ..utils.time import parse_time_to_timestamp
 
 class AffpapaSpider(SunSpider):
     name = "affpapa"
@@ -96,13 +96,22 @@ class AffpapaSpider(SunSpider):
         if not publish_time:
             publish_time = response.css('div.new_meta .date time::text').get()
         if publish_time:
-            item['publish_time'] = publish_time.strip()
+            item['publish_time'] = parse_time_to_timestamp(publish_time.strip())
         else:
             # 备用：从文章底部的 meta 时间提取
-            item['publish_time'] = response.css('div.meta time::text').get(default='').strip()
+            item['publish_time'] = parse_time_to_timestamp(response.css('div.meta time::text').get(default='').strip())
         # 最后修改时间：页面未单独提供，复用发布时间
         item['modified_time'] = item.get('publish_time', '')
-
+        # 封面图
+        cover_image = response.css('div.thumb_content::attr(src)').get()
+        if not cover_image:
+            cover_image = response.css('picture img::attr(src)').get()
+        if not cover_image:
+            cover_image = response.css('.news-featured-image img::attr(src)').get()
+        if cover_image:
+            item['cover_image'] = response.urljoin(cover_image)
+        else:
+            item['cover_image'] = ''
         # ----- 预计阅读时间 -----
         read_time = self.extract_read_time(response)
         item['read_time'] = read_time

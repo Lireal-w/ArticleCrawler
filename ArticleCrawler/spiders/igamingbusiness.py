@@ -7,6 +7,7 @@ from lxml import etree
 
 from ..items import ArticleItem
 from ..utils.SunSpider import SunSpider
+from ..utils.time import parse_time_to_timestamp
 
 class IgamingbusinessSpider(SunSpider):
     name = "igamingbusiness"
@@ -102,8 +103,8 @@ class IgamingbusinessSpider(SunSpider):
         item['title'] = api_data.get('title') or ''
         item['summary'] = api_data.get('summary') or ''
         item['url'] = api_data.get('url') or response.url
-        item['publish_time'] = api_data.get('publish_time') or ''
-        item['modified_time'] = api_data.get('modified_time') or ''
+        item['publish_time'] = parse_time_to_timestamp(api_data.get('publish_time'))
+        item['modified_time'] = parse_time_to_timestamp(api_data.get('modified_time'))
         item['cover_image'] = api_data.get('cover_image') or ''
 
         # ----- 以下字段 API 未提供，需从 HTML 解析 -----
