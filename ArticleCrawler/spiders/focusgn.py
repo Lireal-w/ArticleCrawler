@@ -75,6 +75,9 @@ class FocusgnSpider(SunSpider):
         if publish_time:
             # item['publish_time'] = publish_time.strip()
             # 将发布日期"05/07/26"转为秒级时间戳
+            # 去除 \n \t 等空白字符
+            publish_time = publish_time.strip()
+            publish_time = publish_time.replace('\n', '').replace('\t', '')
             publish_time = datetime.datetime.strptime(publish_time, "%m/%d/%y")
             item['publish_time'] = publish_time.timestamp()
         # 修改时间：页面未单独提供，暂与发布时间相同
@@ -129,7 +132,7 @@ class FocusgnSpider(SunSpider):
                 absolute_url = urljoin(response.url, src)
                 img_urls.append(absolute_url)
         item['image_urls'] = img_urls
-
+        item["cover_image"] = img_urls[0] if img_urls else ''
         yield item
 
     def extract_text_from_content(self, response):

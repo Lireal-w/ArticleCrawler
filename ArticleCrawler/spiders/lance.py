@@ -4,8 +4,9 @@ from datetime import datetime
 from urllib.parse import urljoin
 from ..items import ArticleItem
 
+from ..utils.SunSpider import SunSpider
 
-class LanceSpider(scrapy.Spider):
+class LanceSpider(SunSpider):
     name = "lance"
     allowed_domains = ["lance.com.br"]
     start_urls = ["https://www.lance.com.br/mais-noticias"]
@@ -36,16 +37,21 @@ class LanceSpider(scrapy.Spider):
             # 获取文章详情页链接
             relative_url = card.css('a.absolute.size-full.top-0.left-0::attr(href)').get()
             if relative_url:
+                # if self.is_seen_url(relative_url):
+                #     return
                 article_url = response.urljoin(relative_url)
                 yield scrapy.Request(url=article_url, callback=self.parse_article)
-                return
+                self.mark_url_as_seen(relative_url)
 
         # 如果没有遇到旧文章，且存在下一页，则继续翻页
         if not stop_crawling:
-            next_page = response.xpath('//nav/ul/li[last()]/a/@href').get()
+            next_page = response.xpath('(//nav/ul/li[last()]/a/@href)[2]').get()
+            print(f"Processing next page: {next_page}")
             if next_page:
                 next_page_url = response.urljoin(next_page)
                 yield scrapy.Request(url=next_page_url, callback=self.parse)
+        else:
+            print(f"Stopped crawling at {response.url} due to old articles.")
 
     def parse_article(self, response):
         """

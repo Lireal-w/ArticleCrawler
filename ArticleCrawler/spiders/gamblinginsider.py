@@ -172,5 +172,5 @@ class GamblinginsiderSpider(SunSpider):
                 if absolute_url.startswith('http'):
                     img_urls.append(absolute_url)
         item['image_urls'] = img_urls
-
+        item["cover_image"] = img_urls[0] if img_urls else None
         yield item
