@@ -8,6 +8,8 @@ def parse_time_to_timestamp(time_str):
     """
     if not time_str:
         return None
+    # 去除 \t \n
+    time_str = time_str.replace('\t', '').replace('\n', '')
     try:
         # 使用 dateutil 解析，自动处理时区
         dt = parser.parse(time_str)

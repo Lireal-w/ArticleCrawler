@@ -6,7 +6,8 @@
 #     https://docs.scrapy.org/en/latest/topics/settings.html
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-import os
+import os,sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ['HTTP_PROXY'] = 'http://127.0.0.1:7890'
 os.environ['HTTPS_PROXY'] = 'http://127.0.0.1:7890'
 
@@ -79,6 +80,7 @@ ITEM_PIPELINES = {
 #    "ArticleCrawler.pipelines.ArticlecrawlerPipeline": 300,
     "ArticleCrawler.pipelines.ArticleImagesPipeline": 100,
     "ArticleCrawler.pipelines.JsonFilePipeline": 300,
+    "ArticleCrawler.pipelines.MySQLPipeline": 200,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
