@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 
+from .db import db
 
 # 配置日志，方便观察定时任务输出
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -23,11 +24,13 @@ scheduler = BackgroundScheduler()
 async def lifespan(app: FastAPI):
     """FastAPI 生命周期管理：启动/关闭调度器"""
     # 启动调度器
+    db.connect()
     scheduler.add_job(scheduled_task, 'interval', seconds=10)
     scheduler.start()
     logger.info("APScheduler started, will print 'hello world' every 10 seconds.")
     yield
     # 关闭调度器
+    db.close()
     scheduler.shutdown()
     logger.info("APScheduler shut down.")
 
