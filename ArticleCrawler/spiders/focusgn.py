@@ -61,7 +61,12 @@ class FocusgnSpider(SunSpider):
             item['summary'] = summary.strip()
 
         item['url'] = response.url
-
+        cover_img = response.css('.visible-md-block.visible-lg-block img::attr(src)').get()
+        if not cover_img:
+            cover_img = response.css('.hidden-md.hidden-lg img::attr(src)').get()
+        if not cover_img:
+            cover_img = response.css('.entry-thumbnail img::attr(src)').get()
+        item['cover_image'] = response.urljoin(cover_img) if cover_img else ''
         author_name = response.css('.article-author::text').get()
         if author_name:
             match = re.search(r'by\s+(.+)', author_name)
@@ -132,7 +137,6 @@ class FocusgnSpider(SunSpider):
                 absolute_url = urljoin(response.url, src)
                 img_urls.append(absolute_url)
         item['image_urls'] = img_urls
-        item["cover_image"] = img_urls[0] if img_urls else ''
         yield item
 
     def extract_text_from_content(self, response):

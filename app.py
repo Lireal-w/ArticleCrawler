@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 
-from .db import db
+from .scheduler import run_spider,clean_empty_json_files
 
 # 配置日志，方便观察定时任务输出
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -19,18 +19,25 @@ def scheduled_task():
 # 创建后台调度器
 scheduler = BackgroundScheduler()
 
+def init_scheduler():
+    """初始化调度器"""
+    # 保留原有的间隔任务测试
+    scheduler.add_job(scheduled_task, 'interval', seconds=10)
+    
+    # 每天早上 8:00 执行爬虫任务
+    scheduler.add_job(run_spider, 'cron', hour=8, minute=0)
+    
+    # 每天早上 9:00 执行清理空 JSON 文件任务
+    scheduler.add_job(clean_empty_json_files, 'cron', hour=9, minute=0)
+    
+    scheduler.start()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI 生命周期管理：启动/关闭调度器"""
-    # 启动调度器
-    db.connect()
-    scheduler.add_job(scheduled_task, 'interval', seconds=10)
-    scheduler.start()
+    init_scheduler()
     logger.info("APScheduler started, will print 'hello world' every 10 seconds.")
     yield
-    # 关闭调度器
-    db.close()
     scheduler.shutdown()
     logger.info("APScheduler shut down.")
 

@@ -20,16 +20,18 @@ PROXY_URL = 'http://127.0.0.1:7890'
 proxies = {'http': PROXY_URL, 'https': PROXY_URL} if PROXY_URL else None
 
 SITES = [
-    # {"url": "https://wealthtide.vip", "username": "admin", "app_password": "jly9 DEzT qi1G Uq4u xArU XDAF"},
-    # {"url": "https://lucksystar.vip", "username": "admin", "app_password": "Q7aF qJxJ bw9x pJ3o cr2i CqrO"},
-    # {"url": "https://bettingtableshadow.com", "username": "admin", "app_password": "ffF7 HqDV UsZO 7KCY 5KSF iixx"},
-    # {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
-    # {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
-    # {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
-    # {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
-    # {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
+    {"url": "https://wealthtide.vip", "username": "admin", "app_password": "jly9 DEzT qi1G Uq4u xArU XDAF"},
+    {"url": "https://lucksystar.vip", "username": "admin", "app_password": "Q7aF qJxJ bw9x pJ3o cr2i CqrO"},
+    {"url": "https://bettingtableshadow.com", "username": "admin", "app_password": "ffF7 HqDV UsZO 7KCY 5KSF iixx"},
+    {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
+    {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
+    {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
+    {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
+    {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
     {"url": "https://winhappy.vip", "username": "admin", "app_password": "dzpm vjZp HlGN ReHb 5JH8 BtYL"},
 ]
+
+SITES1 = {"url": "https://goldmedalhand.com", "username": "admin", "app_password": "NX1z XQDz nHjF i1OC aBU7 xkpP"},
 def get_auth(username, app_password):
     return (username, app_password.replace(" ", ""))
 
@@ -149,13 +151,35 @@ def process_and_submit(wp_url, username, app_password, data, wp_status="draft"):
     result = publish_post_to_wp(wp_url=wp_url, username=username, app_password=app_password, title=title, content=final_content, excerpt=summary, status=wp_status, publish_date=formatted_time, featured_media_id=featured_id, read_time=read_time)
     return result is not None
 
+def submit_goldmedalhand(db):
+    articles_to_publish = db.get_unpublished_articles(30,lance=True)
+    success_count = 0
+    while success_count < 30:
+        for article in articles_to_publish:
+            article_url = article.get('url')
+            print(f"正在发布文章: {article.get('title')}")
+            res = process_and_submit("https://goldmedalhand.com", "admin", "NX1z XQDz nHjF i1OC aBU7 xkpP", article, wp_status="draft")
+            if res:
+                db.mark_article_published(article_url)
+                print(f"发布成功并已标记: {article_url},{res}")
+                success_count += 1
+            elif res is None:
+                if not article["content"]:
+                    print(f"发布失败: {article_url}，内容为空")
+                    db.mark_article_published(article_url)
+            else:
+                print(f"发布失败: {article_url}")
+        print("==== 处理完毕 ====")
+    return True
 if __name__ == '__main__':
     db = DB()
     try:
         db.connect()
         # 每个站点每次从数据库拉取 30 篇未发布的最新文章
         ARTICLES_PER_SITE = 20
-        
+        submit_goldmedalhand(db)
+        db.close()
+        exit()
         for site in SITES:
             wp_url = site["url"].rstrip('/')
             username = site["username"]

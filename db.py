@@ -107,7 +107,7 @@ class DB:
         self.cursor.execute(insert_sql, params)
         self.conn.commit()
 
-    def get_unpublished_articles(self, limit=10):
+    def get_unpublished_articles(self, limit=10,lance=False):
         """
         获取未发布的最新文章
         
@@ -123,9 +123,22 @@ class DB:
                image_urls, images, cover_image
         FROM article 
         WHERE is_published = 0 
+          AND url NOT LIKE '%lance.com%'
         ORDER BY publish_time DESC
         LIMIT %s
         """
+        if lance:
+            sql = """
+            SELECT url, title, summary, author_name, author_avatar, 
+                   publish_time, modified_time, read_time, content,
+                   image_urls, images, cover_image
+            FROM article 
+            WHERE is_published = 0 
+              AND url LIKE '%lance.com%'
+            ORDER BY publish_time DESC
+            LIMIT %s
+            """
+
         self.cursor.execute(sql, (limit,))
         columns = [desc[0] for desc in self.cursor.description]
         results = []
