@@ -71,7 +71,7 @@ class IgamingbusinessSpider(SunSpider):
             }
             article_url = api_data['url']
             if article_url:
-                if self.is_seen_url(article_url):continue
+                if self.is_seen_url(article_url):return
                 yield scrapy.Request(
                     url=article_url,
                     callback=self.parse_article,

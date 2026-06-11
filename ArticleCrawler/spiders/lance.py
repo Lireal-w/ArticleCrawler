@@ -37,8 +37,8 @@ class LanceSpider(SunSpider):
             # 获取文章详情页链接
             relative_url = card.css('a.absolute.size-full.top-0.left-0::attr(href)').get()
             if relative_url:
-                # if self.is_seen_url(relative_url):
-                #     return
+                if self.is_seen_url(relative_url):
+                    return
                 article_url = response.urljoin(relative_url)
                 yield scrapy.Request(url=article_url, callback=self.parse_article)
                 self.mark_url_as_seen(relative_url)

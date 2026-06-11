@@ -107,6 +107,52 @@ class DB:
         self.cursor.execute(insert_sql, params)
         self.conn.commit()
 
+    def get_unpublished_articles(self, limit=10):
+        """
+        获取未发布的最新文章
+        
+        Args:
+            limit (int): 获取文章的数量限制，默认10条
+            
+        Returns:
+            list: 包含未发布文章的字典列表，每篇文章是一个字典
+        """
+        sql = """
+        SELECT url, title, summary, author_name, author_avatar, 
+               publish_time, modified_time, read_time, content,
+               image_urls, images, cover_image
+        FROM article 
+        WHERE is_published = 0 
+        ORDER BY publish_time DESC
+        LIMIT %s
+        """
+        self.cursor.execute(sql, (limit,))
+        columns = [desc[0] for desc in self.cursor.description]
+        results = []
+        for row in self.cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+
+    def mark_article_published(self, url):
+        """
+        将指定文章标记为已发布
+        
+        Args:
+            url (str): 文章的唯一标识URL
+            
+        Returns:
+            bool: 更新成功返回True，失败返回False
+        """
+        sql = "UPDATE article SET is_published = 1 WHERE url = %s"
+        try:
+            self.cursor.execute(sql, (url,))
+            self.conn.commit()
+            return self.cursor.rowcount > 0
+        except Exception:
+            self.conn.rollback()
+            return False
+
+
 
 # 工具函数：时间戳转 Y-m-d H:i:s，空/异常返回None
 def ts_to_datetime(ts_val):

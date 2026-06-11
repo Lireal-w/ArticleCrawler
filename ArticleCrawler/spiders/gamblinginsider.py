@@ -26,7 +26,7 @@ class GamblinginsiderSpider(SunSpider):
 
         for link in article_links:
             absolute_url = response.urljoin(link)
-            if self.is_seen_url(absolute_url):continue
+            if self.is_seen_url(absolute_url):return
             yield scrapy.Request(url=absolute_url, callback=self.parse_article)
             self.mark_url_as_seen(absolute_url)
         # 2. 翻页逻辑：查找下一页链接
