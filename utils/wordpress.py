@@ -12,13 +12,13 @@ from requests.auth import HTTPBasicAuth
 # 导入数据库操作模块及工具函数
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from db import DB, ts_to_datetime
+from utils.openapi import rewrite_html_direct
 
 from config import config
 
 load_dotenv() 
 
-PROXY_URL = config.get('proxy', None)
+PROXY_URL = config.get('proxy_url', None)
 proxies = {'http': PROXY_URL, 'https': PROXY_URL} if PROXY_URL else None
 
 def get_auth(username, app_password):
@@ -133,6 +133,7 @@ def process_and_submit(wp_url, username, app_password, data, wp_status="draft"):
             _, wp_image_url = upload_image_to_wp(wp_url, username, app_password, local_path)
             if wp_image_url: final_content = final_content.replace(src, wp_image_url)
 
+    final_content = rewrite_html_direct(final_content)
     featured_id = None
     if cover_image_source:
         featured_id, _ = upload_image_to_wp(wp_url, username, app_password, cover_image_source)

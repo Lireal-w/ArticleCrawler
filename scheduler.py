@@ -73,7 +73,7 @@ def submit_active_to_site():
             "username": "admin", 
             "app_password": "NX1z XQDz nHjF i1OC aBU7 xkpP"
         }
-        gold_limit = 39
+        gold_limit = 30
         gold_success = 0
         
         print(f"\n==== 开始处理站点: {goldmedalhand_config['url']} (目标: {gold_limit}篇) ====")

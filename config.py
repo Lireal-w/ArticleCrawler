@@ -9,7 +9,13 @@ def load_config():
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     # 默认配置
-    default_config = {"proxy_url": "http://127.0.0.1:7890", "cron_hour": 8}
+    default_config = {
+        "proxy_url": "http://127.0.0.1:7890", 
+        "cron_hour": 8,
+        "api_key": "",
+        "base_url":"https://api.deepseek.com",
+        "model":"deepseek-v4-flash"
+    }
     save_config(default_config)
     return default_config
 
