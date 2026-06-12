@@ -6,6 +6,8 @@ import logging
 import time
 import os
 import json
+from db import DB
+from utils.wordpress import process_and_submit
 
 logging.basicConfig(level=logging.INFO)
 
@@ -59,6 +61,107 @@ def clean_empty_json_files(directory='./outfile'):
                     print(f"解析文件 {filepath} 时出错，已跳过: {e}")
                     
     print(f"清理完成！共删除 {deleted_count} 个空 JSON 文件。")
+
+def submit_active_to_site():
+    db = DB()
+    db.connect()
+    
+    try:
+        # ================= 1. 单独处理 goldmedalhand (39篇) =================
+        goldmedalhand_config = {
+            "url": "https://goldmedalhand.com", 
+            "username": "admin", 
+            "app_password": "NX1z XQDz nHjF i1OC aBU7 xkpP"
+        }
+        gold_limit = 39
+        gold_success = 0
+        
+        print(f"\n==== 开始处理站点: {goldmedalhand_config['url']} (目标: {gold_limit}篇) ====")
+        articles = db.get_unpublished_articles(limit=gold_limit, lance=True)
+        
+        for article in articles:
+            if gold_success >= gold_limit:
+                break
+            article_url = article.get('url')
+            print(f"正在发布文章: {article.get('title')}")
+            
+            res = process_and_submit(
+                goldmedalhand_config["url"], 
+                goldmedalhand_config["username"], 
+                goldmedalhand_config["app_password"], 
+                article, 
+                wp_status="draft"
+            )
+            
+            if res:
+                db.mark_article_published(article_url)
+                print(f"✅ 发布成功并已标记: {article_url}")
+                gold_success += 1
+            elif res is None and not article.get("content"):
+                print(f"❌ 发布失败: {article_url}，内容为空")
+                db.mark_article_published(article_url)
+            else:
+                print(f"❌ 发布失败: {article_url}")
+                
+        print(f"==== 站点 {goldmedalhand_config['url']} 处理完毕，成功发布 {gold_success} 篇 ====\n")
+
+        # ================= 2. 处理数据库中的其他站点 (每个20篇) =================
+        sites = db.get_all_sites()
+        site_limit = 20
+        
+        for site in sites:
+            wp_url = site["url"].rstrip('/')
+            username = site["username"]
+            app_password = site["app_password"]
+            
+            # 跳过已单独处理的 goldmedalhand
+            if wp_url == goldmedalhand_config["url"].rstrip('/'):
+                continue
+                
+            print(f"\n==== 开始处理站点: {wp_url} (目标: {site_limit}篇) ====")
+            articles_to_publish = db.get_unpublished_articles(limit=site_limit)
+            success_count = 0
+            
+            while success_count < site_limit:
+                for article in articles_to_publish:
+                    if success_count >= site_limit:
+                        break
+                        
+                    article_url = article.get('url')
+                    print(f"[{wp_url}] 正在发布文章: {article.get('title')}")
+                    
+                    # 处理 JSON 字段反序列化
+                    if isinstance(article.get('image_urls'), str):
+                        article['image_urls'] = json.loads(article['image_urls'])
+                    if isinstance(article.get('images'), str):
+                        article['images'] = json.loads(article['images'])
+                        
+                    res = process_and_submit(wp_url, username, app_password, article, wp_status="draft")
+                    
+                    if res:
+                        success_count += 1
+                        db.mark_article_published(article_url)
+                        print(f"✅ 发布成功并已标记: {article_url}")
+                    elif res is None and not article.get("content"):
+                        print(f"❌ 发布失败: {article_url}，内容为空")
+                        db.mark_article_published(article_url)
+                    else:
+                        print(f"❌ 发布失败: {article_url}")
+                        
+                # 如果一轮没凑够，再拉取剩余所需篇数
+                if success_count < site_limit:
+                    articles_to_publish = db.get_unpublished_articles(limit=site_limit - success_count)
+                    if not articles_to_publish:
+                        print("数据库中无更多未发布文章，跳出当前站点循环。")
+                        break
+                        
+            print(f"==== 站点 {wp_url} 处理完毕，成功发布 {success_count} 篇 ====")
+            
+    except Exception as e:
+        print(f"执行异常: {e}")
+    finally:
+        db.close()
+
 
 if __name__ == '__main__':
     scheduler = BackgroundScheduler()

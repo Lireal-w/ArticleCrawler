@@ -1,6 +1,7 @@
 <!-- path: static/index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <title>定时任务管理</title>
@@ -8,80 +9,182 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-light">
-<div class="container py-5">
-    <h2 class="mb-4 text-center">定时任务调度面板</h2>
-    <div class="row justify-content-center">
-        <!-- 爬虫任务卡片 -->
-        <div class="col-md-5 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">爬虫任务 (run_spider)</div>
-                <div class="card-body">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">时 : 分</span>
-                        <input type="number" id="run_spider_hour" class="form-control" min="0" max="23">
-                        <input type="number" id="run_spider_minute" class="form-control" min="0" max="59">
+    <div class="container py-5">
+        <h2 class="mb-4 text-center">定时任务调度面板</h2>
+        <div class="row justify-content-center">
+            <!-- 爬虫任务卡片 -->
+            <div class="col-md-5 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">爬虫任务 (run_spider)</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">时 : 分</span>
+                            <input type="number" id="run_spider_hour" class="form-control" min="0" max="23">
+                            <input type="number" id="run_spider_minute" class="form-control" min="0" max="59">
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="updateJob('run_spider')">更新时间</button>
                     </div>
-                    <button class="btn btn-primary w-100" onclick="updateJob('run_spider')">更新时间</button>
+                </div>
+            </div>
+            <div class="col-md-5 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">提交任务 (submit_active_to_site)</div>
+                    <div class="card-body">
+                        <div class="input-group mb-3">
+                            <span class="input-group-text">时 : 分</span>
+                            <input type="number" id="submit_active_to_site_hour" class="form-control" min="0" max="23">
+                            <input type="number" id="submit_active_to_site_minute" class="form-control" min="0"
+                                max="59">
+                        </div>
+                        <button class="btn btn-success w-100"
+                            onclick="updateJob('submit_active_to_site')">更新时间</button>
+                    </div>
                 </div>
             </div>
         </div>
-        <!-- 清理任务卡片 -->
-        <div class="col-md-5 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">清理任务 (clean_empty_json_files)</div>
-                <div class="card-body">
-                    <div class="input-group mb-3">
-                        <span class="input-group-text">时 : 分</span>
-                        <input type="number" id="clean_empty_json_files_hour" class="form-control" min="0" max="23">
-                        <input type="number" id="clean_empty_json_files_minute" class="form-control" min="0" max="59">
+        <h4 class="mb-3 mt-5 text-center">站点配置管理</h4>
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-10">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <!-- 添加站点表单 -->
+                        <form id="siteForm" class="row g-3 align-items-center mb-3">
+                            <div class="col-md-4">
+                                <input type="text" id="site_url" class="form-control" placeholder="站点 URL" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" id="site_username" class="form-control" placeholder="用户名" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" id="site_app_password" class="form-control" placeholder="应用密码"
+                                    required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-warning w-100">添加站点</button>
+                            </div>
+                        </form>
+                        <!-- 站点列表表格 -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>URL</th>
+                                        <th>用户名</th>
+                                        <th>应用密码</th>
+                                        <th style="width: 100px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="siteTableBody">
+                                    <!-- 动态数据 -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <button class="btn btn-success w-100" onclick="updateJob('clean_empty_json_files')">更新时间</button>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- jQuery & Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    const jobs = ["run_spider", "clean_empty_json_files"];
+    <script>
+        const jobs = ["run_spider", "submit_active_to_site"];
 
-    // 页面加载时获取当前执行时间
-    function loadSchedules() {
-        jobs.forEach(job => {
-            $.get(`/schedule/${job}`, function(data) {
-                $(`#${job}_hour`).val(data.hour);
-                $(`#${job}_minute`).val(data.minute);
+        // 页面加载时获取当前执行时间
+        function loadSchedules() {
+            jobs.forEach(job => {
+                $.get(`/schedule/${job}`, function (data) {
+                    $(`#${job}_hour`).val(data.hour);
+                    $(`#${job}_minute`).val(data.minute);
+                });
+            });
+        }
+
+        // 提交修改后的执行时间
+        function updateJob(job) {
+            const hour = parseInt($(`#${job}_hour`).val());
+            const minute = parseInt($(`#${job}_minute`).val());
+
+            $.ajax({
+                url: `/schedule/${job}`,
+                type: 'PUT',
+                contentType: 'application/json',
+                data: JSON.stringify({ hour: hour, minute: minute }),
+                success: function (res) {
+                    alert(res.message);
+                    loadSchedules(); // 刷新确认
+                },
+                error: function (err) {
+                    alert("更新失败: " + (err.responseJSON?.error || '未知错误'));
+                }
+            });
+        }
+        function loadSites() {
+            $.get('/sites', function (data) {
+                const tbody = $('#siteTableBody');
+                tbody.empty();
+                if (data.sites) {
+                    data.sites.forEach(site => {
+                        const encodedUrl = encodeURIComponent(site.url);
+                        tbody.append(`
+                        <tr>
+                            <td>${site.url}</td>
+                            <td>${site.username}</td>
+                            <td>${site.app_password}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteSite('${encodedUrl}')">删除</button>
+                            </td>
+                        </tr>
+                    `);
+                    });
+                }
+            });
+        }
+
+        $('#siteForm').submit(function (e) {
+            e.preventDefault();
+            const payload = {
+                url: $('#site_url').val(),
+                username: $('#site_username').val(),
+                app_password: $('#site_app_password').val()
+            };
+            $.ajax({
+                url: '/sites',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                success: function (res) {
+                    alert(res.message);
+                    $('#siteForm')[0].reset();
+                    loadSites();
+                },
+                error: function (err) {
+                    alert("添加失败: " + (err.responseJSON?.detail || '未知错误'));
+                }
             });
         });
-    }
 
-    // 提交修改后的执行时间
-    function updateJob(job) {
-        const hour = parseInt($(`#${job}_hour`).val());
-        const minute = parseInt($(`#${job}_minute`).val());
-        
-        $.ajax({
-            url: `/schedule/${job}`,
-            type: 'PUT',
-            contentType: 'application/json',
-            data: JSON.stringify({ hour: hour, minute: minute }),
-            success: function(res) {
-                alert(res.message);
-                loadSchedules(); // 刷新确认
-            },
-            error: function(err) {
-                alert("更新失败: " + (err.responseJSON?.error || '未知错误'));
-            }
+        function deleteSite(encodedUrl) {
+            if (!confirm("确认删除该站点吗？")) return;
+            $.ajax({
+                url: `/sites/${encodedUrl}`,
+                type: 'DELETE',
+                success: function (res) {
+                    alert(res.message);
+                    loadSites();
+                },
+                error: function (err) {
+                    alert("删除失败: " + (err.responseJSON?.detail || '未知错误'));
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            loadSchedules(); // 原有逻辑
+            loadSites();     // 新增逻辑
         });
-    }
-
-    $(document).ready(function() {
-        loadSchedules();
-    });
-</script>
+    </script>
 </body>
+
 </html>

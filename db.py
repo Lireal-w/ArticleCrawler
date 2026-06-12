@@ -24,6 +24,16 @@ CREATE TABLE `article` (
   PRIMARY KEY (`url`(767))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文章信息表';
 """
+INIT_SITE_TABLE_SQL = """
+CREATE TABLE `site` (
+  `url` VARCHAR(2048) NOT NULL COMMENT '站点URL（唯一标识）',
+  `username` VARCHAR(100) NOT NULL COMMENT 'WordPress用户名',
+  `app_password` VARCHAR(100) NOT NULL COMMENT 'WordPress应用密码',
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '记录创建时间',
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '记录更新时间',
+  PRIMARY KEY (`url`(767))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='发布站点配置表';
+"""
 
 load_dotenv()
 SQL_DATABASE_NAME = os.environ.get("SQL_DATABASE_NAME")
@@ -60,6 +70,24 @@ class DB:
             if not col_exist:
                 self.cursor.execute("ALTER TABLE article ADD COLUMN is_published TINYINT(1) DEFAULT 0 COMMENT '是否发布 0=未发布 1=已发布' AFTER cover_image;")
                 self.conn.commit()
+        if not self.table_exists('site'):
+            self.cursor.execute(INIT_SITE_TABLE_SQL)
+            # 插入初始数据
+            SITES = [
+                {"url": "https://wealthtide.vip", "username": "admin", "app_password": "jly9 DEzT qi1G Uq4u xArU XDAF"},
+                {"url": "https://lucksystar.vip", "username": "admin", "app_password": "Q7aF qJxJ bw9x pJ3o cr2i CqrO"},
+                {"url": "https://bettingtableshadow.com", "username": "admin", "app_password": "ffF7 HqDV UsZO 7KCY 5KSF iixx"},
+                {"url": "https://betgodwind.com", "username": "admin", "app_password": "yvmA JAu6 KX2Q 4tnr DrGr SJwz"},
+                {"url": "https://colorballfly.com", "username": "admin", "app_password": "eF6o UdXE w4Ed lrqz D3n5 nb3D"},
+                {"url": "https://cardgamedream.com", "username": "admin", "app_password": "0itx i5io nIy9 eO3c vQhj xXw4"},
+                {"url": "https://goldmedalhand.com", "username": "admin", "app_password": "NX1z XQDz nHjF i1OC aBU7 xkpP"},
+                {"url": "https://gamblerheart.com", "username": "admin", "app_password": "pmmF 0Tgb I5TO rags kIIf AWfS"},
+                {"url": "https://winlosehand.com", "username": "admin", "app_password": "jLxn 7LFw gFAY VWVE j745 3aMj"},
+                {"url": "https://winhappy.vip", "username": "admin", "app_password": "dzpm vjZp HlGN ReHb 5JH8 BtYL"},
+            ]
+            for site in SITES:
+                self.insert_site(site["url"], site["username"], site["app_password"])
+            self.conn.commit()
 
     # 安全关闭连接
     def close(self):
@@ -164,6 +192,46 @@ class DB:
         except Exception:
             self.conn.rollback()
             return False
+
+    def insert_site(self, url, username, app_password):
+        """
+        插入或更新站点配置
+        
+        Args:
+            url (str): 站点URL
+            username (str): 用户名
+            app_password (str): 应用密码
+        """
+        insert_sql = """
+        INSERT INTO site (url, username, app_password)
+        VALUES (%s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+        username=VALUES(username),
+        app_password=VALUES(app_password)
+        """
+        self.cursor.execute(insert_sql, (url, username, app_password))
+        self.conn.commit()
+
+    def get_all_sites(self):
+        """
+        获取所有站点配置
+        
+        Returns:
+            list: 包含站点配置的字典列表
+        """
+        sql = "SELECT url, username, app_password FROM site"
+        self.cursor.execute(sql)
+        columns = [desc[0] for desc in self.cursor.description]
+        results = []
+        for row in self.cursor.fetchall():
+            results.append(dict(zip(columns, row)))
+        return results
+    
+    def delete_site(self, url):
+        """删除站点配置"""
+        sql = "DELETE FROM site WHERE url = %s"
+        self.cursor.execute(sql, (url,))
+        self.conn.commit()
 
 
 

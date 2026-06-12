@@ -7,7 +7,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 
-from scheduler import run_spider,clean_empty_json_files
+from db import DB
+from scheduler import run_spider,clean_empty_json_files,submit_active_to_site
 
 # 配置日志，方便观察定时任务输出
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -21,6 +22,7 @@ def scheduled_task():
 
 # 创建后台调度器
 scheduler = BackgroundScheduler()
+db = DB()
 
 def init_scheduler():
     """初始化调度器"""
@@ -29,15 +31,17 @@ def init_scheduler():
     
     scheduler.add_job(run_spider, 'cron', hour=8, minute=0, id='run_spider')
     scheduler.add_job(clean_empty_json_files, 'cron', hour=9, minute=0, id='clean_empty_json_files')
+    scheduler.add_job(submit_active_to_site, 'cron', hour=9, minute=0, id='submit_active_to_site')
     scheduler.start()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """FastAPI 生命周期管理：启动/关闭调度器"""
     init_scheduler()
-    logger.info("APScheduler started, will print 'hello world' every 10 seconds.")
+    db.connect()
     yield
     scheduler.shutdown()
+    db.close()
     logger.info("APScheduler shut down.")
 
 
@@ -80,7 +84,7 @@ class ScheduleTime(BaseModel):
 @app.put("/schedule/{job_name}")
 async def update_schedule(job_name: str, time: ScheduleTime):
     # 限定只允许修改这两个任务
-    valid_jobs = ["run_spider", "clean_empty_json_files"]
+    valid_jobs = ["run_spider", "submit_active_to_site"]
     if job_name not in valid_jobs:
         return {"error": f"Invalid job name. Must be one of {valid_jobs}"}
 
@@ -98,7 +102,7 @@ async def update_schedule(job_name: str, time: ScheduleTime):
     
 @app.get("/schedule/{job_name}")
 async def get_schedule(job_name: str):
-    valid_jobs = ["run_spider", "clean_empty_json_files"]
+    valid_jobs = ["run_spider", "submit_active_to_site"]
     if job_name not in valid_jobs:
         return {"error": f"Invalid job name. Must be one of {valid_jobs}"}
 
@@ -114,6 +118,39 @@ async def get_schedule(job_name: str):
         hour = None
         minute = None
     return {"job_name": job_name, "hour": hour, "minute": minute}
+
+class SiteInfo(BaseModel):
+    url: str
+    username: str
+    app_password: str
+    
+@app.get("/sites")
+async def get_sites():
+    """获取所有站点配置"""
+    try:
+        sites = db.get_all_sites()
+        return {"sites": sites}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.post("/sites")
+async def add_site(site: SiteInfo):
+    """新增或更新站点配置"""
+    try:
+        db.insert_site(site.url, site.username, site.app_password)
+        return {"message": "Site added/updated successfully"}
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.delete("/sites/{site_url:path}")
+async def delete_site(site_url: str):
+    """删除指定站点配置"""
+    try:
+        # 需在 DB 类中确保有 delete_site 方法
+        db.delete_site(site_url)
+        return {"message": "Site deleted successfully"}
+    except Exception as e:
+        return {"error": str(e)}
 
 if __name__ == "__main__":
     import uvicorn
